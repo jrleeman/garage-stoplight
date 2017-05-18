@@ -17,6 +17,10 @@ const int S_WAIT = 3;
 const int S_PARKING = 4;
 const int S_SHUTDOWN = 5;
 
+// Variables
+int active_sensor = 0;
+float ranges[N_SENSORS];
+
 void setup() {
   // Nothing to do here, the initialization state will take care
   // of everything.
@@ -24,7 +28,6 @@ void setup() {
 
 void loop() {
   static int state = S_INIT;
-  static int active_sensor = 0;
 
   switch (state)
   {
@@ -74,32 +77,34 @@ int state_init() {
 
 int state_get_ranges() {
   float new_ranges[N_SENSORS];
-  static float ranges[N_SENSORS];
+  
   
   for (int i=0; i++; i<N_SENSORS) {
     new_ranges[i] = get_range_meters(SENSOR_PINS[i]);
     if ((ranges[i] - new_ranges[i]) >= MOVEMENT_THRESHOLD) {
       active_sensor = i;
-      ranges = new_ranges;
-      return S_VERIFY_MOVEMENT
+      memcpy(new_ranges, ranges, N_SENSORS*sizeof(float));
+      return S_VERIFY_MOVEMENT;
     }
   }
-  ranges = new_ranges;
+
+  
+  memcpy(new_ranges, ranges, N_SENSORS*sizeof(float));
   return S_WAIT;
 }
 
-int state_verify_movement(float range) {
+int state_verify_movement() {
   // Wait half a second and make sure we are getting closer still
   delay(500);
   float new_range = get_range_meters(SENSOR_PINS[active_sensor]);
-  if (new_range < range) {
+  if (new_range < ranges[active_sensor]) {
     return S_PARKING;
   }
   return S_WAIT;
 }
 
 int state_wait() {
-  dealy(SCAN_DELAY * 1000);
+  delay(SCAN_DELAY * 1000);
   return S_GET_RANGES;
 }
 
@@ -109,11 +114,11 @@ int state_parking() {
   long start_time = millis();
   // While we are not ready to stop, update the state
   while (range >=THRESHOLDS[active_sensor][2]){
-    if (range >= THRESHOLDS[active_sensor[0]){
+    if (range >= THRESHOLDS[active_sensor][0]){
       // Out in the green zone, green steady burn
       digitalWrite(GREEN_LIGHT_PIN, HIGH);
     }
-    if (range >= THRESHOLDS[active_sensor][1] && range < THRESHOLDS[active_sensor[0]) {
+    if (range >= THRESHOLDS[active_sensor][1] && range < THRESHOLDS[active_sensor][0]) {
       // In the slow zone, flash yellow
       digitalWrite(GREEN_LIGHT_PIN, LOW);
       digitalWrite(YELLOW_LIGHT_PIN, HIGH);
@@ -158,10 +163,10 @@ float get_range_meters(int pin){
   delayMicroseconds(2);
   digitalWrite(pin, HIGH);
   delayMicroseconds(5);
-  digitalWrite(pPin, LOW);
+  digitalWrite(pin, LOW);
   pinMode(pin, INPUT);
   long duration = pulseIn(pin, HIGH);
-  return duartion / 29 / 2 / 100;
+  return duration / 29 / 2 / 100;
 }
 
 
