@@ -104,16 +104,11 @@ int state_get_ranges() {
     Serial.println(ranges[i] - new_ranges[i]);
     if ((ranges[i] - new_ranges[i]) >= MOVEMENT_THRESHOLD) {
       active_sensor = i;
-      //memcpy(new_ranges, ranges, N_SENSORS*sizeof(float));
-      for (int i=0; i<N_SENSORS; i++) {
-        ranges[i] = new_ranges[i];
-      }
+      memcpy(ranges, new_ranges, sizeof(ranges));
       return S_VERIFY_MOVEMENT;
     }
   }
-  for (int i=0; i<N_SENSORS; i++) {
-        ranges[i] = new_ranges[i];
-      }
+   memcpy(ranges, new_ranges, sizeof(ranges));
   return S_WAIT;
 }
 
